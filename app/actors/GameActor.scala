@@ -56,35 +56,37 @@ class GameActor(out: ActorRef) extends Actor {
 
   var steps = Map[String, Seq[Instruction]](
     "start" -> Seq(
-      Talk("Salut"),
-      Talk("Comment vas-tu ?"),
+      Talk("Euh… bonjour, vous me recevez ?"),
       Question(
-        "fine" -> "Ça va bien, merci.",
-        "badly" -> "Euh… là tout de suite, moyen."
+        "jevousrecois" -> "Je vous reçois.",
+        "quiestce" -> "Qui est-ce ?"
       )
     ),
-    "fine" -> Seq(
-      SetCtx("happy" -> 1),
-      Talk("Cool"),
-      Jump("start2")
+    "quiestce" -> Seq(
+      SetCtx("quiestce" -> 1),
+      Talk("On m'appelle Coca"),
+      IfCtxEQ("jevousrecois" -> 1, Jump("suite")),
+      Jump("jevousrecois")
     ),
-    "badly" -> Seq(
-      SetCtx("happy" -> 0),
-      Talk("Ha, désolé"),
-      Jump("start2")
-    ),
-    "start2" -> Seq(
-      Talk("J'ai une mission pour toi"),
-      IfCtxEQ("happy" -> 0, Talk("malgré ton mal à la vie")),
-      IfCtxEQ("happy" -> 0, Talk("mais remarque je m'en fou")),
-      Talk("Es-tu partant ?"),
+    "jevousrecois" -> Seq(
+      SetCtx("jevousrecois" -> 1),
+      Talk("Je viens de trouver un téléphone, mais je peux juste envoyer des messages"),
+      Talk("Apparemment vous me recevez."),
+      Talk("C'est bien."),
+      IfCtxEQ("quiestce" -> 1, Jump("suite")),
+      Talk("Vous êtes dans un abris ?"),
       Question(
-        "partant" -> "Bien sur.",
-        "papartant" -> "Euh… pas vraiment, non."
+        "suite" -> "Un abris ?",
+        "maisquietesvous" -> "Mais qui êtes vous ?"
       )
     ),
-    "partant" -> Seq(Talk("cool")),
-    "papartant" -> Seq(Info("The end"))
+    "maisquietesvous" -> Seq(
+      Talk("Oh, désolé, j'aurais du commencer par là."),
+      Jump("quiestce")
+    ),
+    "suite" -> Seq(
+      Talk("ok")
+    )
   )
 
   object current {
