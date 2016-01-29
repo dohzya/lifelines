@@ -140,7 +140,7 @@ class GameActor(out: ActorRef) extends Actor {
       current.index += 1
       self ! Next
 
-    case Talk(content) =>
+    case Info(content) =>
       out ! models.Info(content)
       current.index += 1
       self ! Next
