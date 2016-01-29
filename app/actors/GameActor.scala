@@ -85,7 +85,7 @@ class GameActor(out: ActorRef) extends Actor {
       Jump("quiestce")
     ),
     "suite" -> Seq(
-      Talk("ok")
+      Info("-- to continue --")
     )
   )
 
@@ -113,7 +113,7 @@ class GameActor(out: ActorRef) extends Actor {
 
     case Talk(content) =>
       out ! models.Talking
-      context.system.scheduler.scheduleOnce(200.milliseconds, self, Wait(2000.milliseconds, SendTalk(content)))
+      context.system.scheduler.scheduleOnce(200.milliseconds, self, Wait(1000.milliseconds, SendTalk(content)))
 
     case SendTalk(content) =>
       out ! models.Talk(content)
