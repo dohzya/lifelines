@@ -8,6 +8,7 @@ import play.api.libs.json.Json
 import play.api.Logger
 import play.api.Play.current
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import lifelines.models
 
@@ -37,6 +38,7 @@ class GameActor(out: ActorRef) extends Actor {
   }
 
   sealed trait Instruction
+  case class Wait(duration: FiniteDuration, instr: Instruction) extends Instruction
   case class Talk(content: String) extends Instruction
   case class Info(content: String) extends Instruction
   case class Question(choices: Map[String, String]) extends Instruction
@@ -46,6 +48,9 @@ class GameActor(out: ActorRef) extends Actor {
   case class IfCtxGT(param: (String, Int), instr: Instruction) extends Instruction
   case class IfCtxLT(param: (String, Int), instr: Instruction) extends Instruction
   case class Jump(step: String) extends Instruction
+
+  case class SendTalk(content: String) extends Instruction
+  case class SendQuestion(choices: Map[String, String]) extends Instruction
 
   case object Next
 
@@ -101,7 +106,14 @@ class GameActor(out: ActorRef) extends Actor {
       logger.debug(s"Received action $action")
       self ! Jump(action)
 
+    case Wait(duration, instr) =>
+      context.system.scheduler.scheduleOnce(duration, self, instr)
+
     case Talk(content) =>
+      out ! models.Talking
+      context.system.scheduler.scheduleOnce(200.milliseconds, self, Wait(2000.milliseconds, SendTalk(content)))
+
+    case SendTalk(content) =>
       out ! models.Talk(content)
       self ! Next
 
@@ -110,6 +122,9 @@ class GameActor(out: ActorRef) extends Actor {
       self ! Next
 
     case Question(choices) =>
+      context.system.scheduler.scheduleOnce(500.milliseconds, self, SendQuestion(choices))
+
+    case SendQuestion(choices) =>
       out ! models.Choices(choices.toMap)
       self ! Next
 
@@ -121,19 +136,19 @@ class GameActor(out: ActorRef) extends Actor {
       if (current.ctx.get(param).map(_ == value).getOrElse(false)) {
         self ! instr
       }
-      self ! Next
+      else self ! Next
 
     case IfCtxGT((param, value), instr) =>
       if (current.ctx.get(param).map(_ > value).getOrElse(false)) {
         self ! instr
       }
-      self ! Next
+      else self ! Next
 
     case IfCtxLT((param, value), instr) =>
       if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
         self ! instr
       }
-      self ! Next
+      else self ! Next
 
     case Jump(step) =>
       steps.get(step) match {
