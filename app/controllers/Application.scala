@@ -21,7 +21,6 @@ class Application extends Controller {
   implicit val outEventFrameFormatter = FrameFormatter.jsonFrame[Output]
 
   def create = WebSocket.acceptWithActor[Input, Output] { request => out =>
-    Logger.debug("Creating game")
     lifelines.actors.GameActor.props(out)
   }
 

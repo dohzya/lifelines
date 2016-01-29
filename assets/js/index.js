@@ -1,6 +1,8 @@
 console.log("Bienvenue sur LifelineS")
 
 var websocket;
+var output;
+var elTalking;
 
 function doSend(message) {
   websocket.send(message);
@@ -16,14 +18,31 @@ function currentChoice(el) {
   };
 }
 
-function showMessage(opts, content, kind) {
+function talking() {
+  if (!elTalking) {
+    elTalking = document.createElement("p");
+    elTalking.className = `message talking`;
+    elTalking.innerHTML = "...";
+    output.appendChild(elTalking);
+  }
+}
+function stopTalking() {
+  if (elTalking) {
+    elTalking.parentNode.removeChild(elTalking);
+    elTalking = undefined;
+  }
+}
+
+function showMessage(content, kind) {
+  stopTalking();
   var elMsg = document.createElement("p");
   elMsg.className = `message ${kind}`;
   elMsg.innerHTML = content;
-  opts.output.appendChild(elMsg);
+  output.appendChild(elMsg);
 }
 
-function showChoices(opts, choices) {
+function showChoices(choices) {
+  stopTalking();
   var elChoices = document.createElement("ul");
   elChoices.className = "choices";
   for (name in choices) {
@@ -33,7 +52,7 @@ function showChoices(opts, choices) {
     elChoice.innerHTML = choices[name];
     elChoices.appendChild(elChoice);
   }
-  opts.output.appendChild(elChoices);
+  output.appendChild(elChoices);
   currentChoice(elChoices);
 }
 
@@ -44,20 +63,21 @@ function send(action) {
 
 function start(opts) {
   websocket = new WebSocket(opts.wsUri);
+  output = opts.output;
   websocket.onopen = (evt) => {
-    showMessage(opts, "CONNECTED", "info");
-    send("first");
+    showMessage("-- connecté -- ", "info");
   };
   websocket.onclose = (evt) => {
-    showMessage(opts, "DISCONNECTED", "info");
+    showMessage("-- déconnecté -- ", "info");
   };
   websocket.onmessage = (evt) => {
     var data = JSON.parse(evt.data);
-    if (data.kind == "choices") showChoices(opts, data.choices);
-    else showMessage(opts, data.message, data.kind);
+    if (data.kind == "choices") showChoices(data.choices);
+    else if (data.kind == "talking") talking();
+    else showMessage(data.message, data.kind);
   };
   websocket.onerror = (evt) => {
-    showMessage(opts, evt.data, "error");
+    showMessage(evt.data, "error");
   };
 }
 

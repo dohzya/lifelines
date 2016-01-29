@@ -10,8 +10,14 @@ import scala.concurrent.Promise
 /** WorldActor stores the infos of the whole world */
 class WorldActor extends Actor {
 
+  val logger = Logger("app.actors.world")
+
   override def preStart() {
-    Logger.info("Start game")
+    logger.info("Start world")
+  }
+
+  override def postStop() {
+    logger.info("Stopped world")
   }
 
   var lastId = 0
@@ -27,10 +33,13 @@ class WorldActor extends Actor {
     case WorldActor.Started(ref) =>
       val id = createGame(ref)
       ref ! WorldActor.SetId(id)
-    case WorldActor.Stopped(Some(id)) => games -= id
+      logger.debug(s"""${games.size} games - lastId = $lastId""")
+    case WorldActor.Stopped(Some(id)) =>
+      games -= id
+      logger.debug(s"""${games.size} games - lastId = $lastId""")
     case WorldActor.Stopped(None) => // nothing to do
     case msg =>
-      Logger.warn(s"Received unsupported message: $msg")
+      logger.warn(s"Received unsupported message: $msg")
   }
 
 }
@@ -42,7 +51,7 @@ object WorldActor {
   case class Started(ref: ActorRef) extends Messages
   case class SetId(id: Int) extends Messages
 
-  private val ref = Akka.system.actorOf(Props[WorldActor], name = "game")
+  private val ref = Akka.system.actorOf(Props[WorldActor], name = "world")
   def !(msg: Messages) = ref ! msg
 
 }
