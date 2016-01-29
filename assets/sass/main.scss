@@ -1,22 +1,44 @@
+$base03:    #002b36;
+$base02:    #073642;
+$base01:    #586e75;
+$base00:    #657b83;
+$base0:     #839496;
+$base1:     #93a1a1;
+$base2:     #eee8d5;
+$base3:     #fdf6e3;
+$yellow:    #b58900;
+$orange:    #cb4b16;
+$red:       #dc322f;
+$magenta:   #d33682;
+$violet:    #6c71c4;
+$blue:      #268bd2;
+$cyan:      #2aa198;
+$green:     #859900;
+
+html {
+  color: $base00;
+  background: $base3;
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
 #chat {
   padding: 1em;
 
-  background: rgb(140, 140, 140);
   .message {
     margin: 1em;
     padding: 1em;
 
-    border: 1px solid rgb(40, 40, 40);
+    border: 1px solid $base03;
     border-radius: 3px;
   }
   .message.talk {
-    background: rgb(240, 240, 240);
+    //background: $base2;
   }
   .message.info {
-    background: #adadad;
+    color: $green;
   }
   .message.error {
-    background: rgb(206, 147, 147);
+    background: $red;
   }
   .choices .choice {
     margin: 1em;
@@ -24,14 +46,20 @@
 
     list-style: none;
 
-    border: 1px solid rgb(40, 40, 40);
+    border: 1px solid;
     border-radius: 3px;
-    background: rgb(240, 240, 240);
+  }
+  .choices.current-choice .choice {
+    border-color: $blue;
   }
   .choices.current-choice .choice:hover {
-    background: #adadad;
+    border-color: $magenta;
+    background: $magenta;
+    color: white;
   }
   .choices .choice.selected-choice {
-    background: #adadad;
+    border-color: $magenta;
+    background: $magenta;
+    color: white;
   }
 }
