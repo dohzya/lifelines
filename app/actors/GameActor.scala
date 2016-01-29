@@ -36,19 +36,6 @@ class GameActor(out: ActorRef) extends Actor {
       self ! Next
   }
 
-  // var steps = Map[String, Seq[Output]](
-  //   "start" -> Seq(
-  //     Talk("Salut"),
-  //     Talk("Comment vas-tu ?"),
-  //     Choices(Map(
-  //       "fine" -> "Ça va bien, merci.",
-  //       "badly" -> "Euh… là tout de suite, moyen."
-  //     ))
-  //   ),
-  //   "fine" -> Seq(Talk("Cool")),
-  //   "badly" -> Seq(Talk("Ha, désolé"))
-  // )
-
   sealed trait Instruction
   case class Talk(content: String) extends Instruction
   case class Info(content: String) extends Instruction
@@ -97,88 +84,65 @@ class GameActor(out: ActorRef) extends Actor {
 
   object current {
     val ctx = scala.collection.mutable.Map.empty[String, Int]
-    var step = "start"
-    var index = 0
+    var stack = steps("start")
     var name = "Crogon"
   }
 
   def receivedStarted = buildReceive {
-    // case Input(action) =>
-    //   steps.get(action) match {
-    //     case Some(stuff) =>
-    //       stuff.foreach { stuff =>
-    //         if (stuff.isTalking) {
-    //           out ! Talking
-    //           Thread.sleep(2000)
-    //         }
-    //         out ! stuff
-    //         Thread.sleep(500)
-    //       }
-    //     case None => out ! Error("Action inconnue")
-    //   }
-
     case Next =>
-      steps.get(current.step) match {
-        case Some(instructions) =>
-          instructions.lift(current.index) match {
-            case Some(instr) => self ! instr
-            case None => // nothing to do
-          }
-        case None =>
-          out ! models.Error("Action inconnue")
-          self ! PoisonPill
+      current.stack match {
+        case instr +: stack =>
+          self ! instr
+          current.stack = stack
+        case Seq() => // nothing to do
       }
 
     case models.Input(action) =>
       logger.debug(s"Received action $action")
-      current.step = action
-      current.index = 0
-      self ! Next
+      self ! Jump(action)
 
     case Talk(content) =>
       out ! models.Talk(content)
-      current.index += 1
       self ! Next
 
     case Info(content) =>
       out ! models.Info(content)
-      current.index += 1
       self ! Next
 
     case Question(choices) =>
       out ! models.Choices(choices.toMap)
-      current.index += 1
       self ! Next
 
     case SetCtx((param, value)) =>
-      current.ctx -> (param -> value)
-      current.index += 1
+      current.ctx += (param -> value)
       self ! Next
 
     case IfCtxEQ((param, value), instr) =>
       if (current.ctx.get(param).map(_ == value).getOrElse(false)) {
         self ! instr
       }
-      current.index += 1
       self ! Next
 
     case IfCtxGT((param, value), instr) =>
-    if (current.ctx.get(param).map(_ > value).getOrElse(false)) {
+      if (current.ctx.get(param).map(_ > value).getOrElse(false)) {
         self ! instr
       }
-      current.index += 1
       self ! Next
 
     case IfCtxLT((param, value), instr) =>
-    if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
+      if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
         self ! instr
       }
-      current.index += 1
       self ! Next
 
     case Jump(step) =>
-      current.step = step
-      current.index = 0
+      steps.get(step) match {
+        case Some(instructions) =>
+          current.stack = instructions
+        case None =>
+          out ! models.Error("Action inconnue")
+          self ! PoisonPill
+      }
       self ! Next
   }
 
