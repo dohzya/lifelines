@@ -1,0 +1,37 @@
+#chat {
+  padding: 1em;
+
+  background: rgb(140, 140, 140);
+  .message {
+    margin: 1em;
+    padding: 1em;
+
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+  }
+  .message.talk {
+    background: rgb(240, 240, 240);
+  }
+  .message.info {
+    background: #adadad;
+  }
+  .message.error {
+    background: rgb(206, 147, 147);
+  }
+  .choices .choice {
+    margin: 1em;
+    padding: 1em;
+
+    list-style: none;
+
+    border: 1px solid rgb(40, 40, 40);
+    border-radius: 3px;
+    background: rgb(240, 240, 240);
+  }
+  .choices.current-choice .choice:hover {
+    background: #adadad;
+  }
+  .choices .choice.selected-choice {
+    background: #adadad;
+  }
+}

@@ -1,7 +1,16 @@
-@()
+@(wsUri: String)
 
 @main {
 
-    <h1>Lifelines</h1>
+    <h1>LifelineS</h1>
+
+    <div id="chat"></div>
+
+    <script>
+      window.startGame({
+        wsUri: "@wsUri",
+        output: document.getElementById("chat"),
+      })
+    </script>
 
 }

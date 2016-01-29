@@ -3,3 +3,6 @@
 /project/target
 /RUNNING_PID
 /target
+/node_modules/
+public/js
+public/css
