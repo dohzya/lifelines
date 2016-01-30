@@ -14,7 +14,7 @@ import scala.util.parsing.combinator.RegexParsers
 import lifelines.models
 
 /** GameActor stores the infos of one game (one player) */
-class GameActor(out: ActorRef) extends Actor {
+class GameActor(out: ActorRef, fast: Boolean) extends Actor {
   import GameActor.logger
 
   var maybeId = Option.empty[Int]
@@ -127,6 +127,11 @@ suite:
     var name = "Crogon"
   }
 
+  def schedule(duration: FiniteDuration, message: Any) = {
+    if (fast) self ! message
+    else context.system.scheduler.scheduleOnce(duration, self, message)
+  }
+
   def receivedStarted = buildReceive {
     case Next =>
       current.stack match {
@@ -141,22 +146,22 @@ suite:
       self ! Jump(action)
 
     case Wait(duration, instr) =>
-      context.system.scheduler.scheduleOnce(duration, self, instr)
+      schedule(duration, instr)
 
     case Talk(content) =>
       out ! models.Talking
-      context.system.scheduler.scheduleOnce(200.milliseconds, self, Wait(1000.milliseconds, SendTalk(content)))
+      schedule(200.milliseconds, Wait(1000.milliseconds, SendTalk(content)))
 
     case SendTalk(content) =>
       out ! models.Talk(content)
-      context.system.scheduler.scheduleOnce(200.milliseconds, self, Next)
+      schedule(200.milliseconds, Next)
 
     case Info(content) =>
       out ! models.Info(content)
       self ! Next
 
     case Question(choices) =>
-      context.system.scheduler.scheduleOnce(500.milliseconds, self, SendQuestion(choices))
+      schedule(500.milliseconds, SendQuestion(choices))
 
     case SendQuestion(choices) =>
       out ! models.Choices(choices.toMap)
@@ -214,5 +219,5 @@ suite:
 }
 object GameActor {
   def logger = Logger("app.actors.game")
-  def props(out: ActorRef) = Props(classOf[GameActor], out)
+  def props(out: ActorRef, fast: Boolean) = Props(classOf[GameActor], out, fast)
 }

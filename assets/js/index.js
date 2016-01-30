@@ -62,7 +62,7 @@ function send(action) {
 }
 
 function start(opts) {
-  websocket = new WebSocket(opts.wsUri);
+  websocket = new WebSocket(opts.wsUri + location.search);
   output = opts.output;
   websocket.onopen = (evt) => {
     showMessage("-- connecté -- ", "info");
