@@ -6,7 +6,7 @@ import akka.actor.{ Actor, Props, ActorRef }
 import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
 import play.api.Logger
-import play.api.Play.current
+import play.api.Play.{ current => PlayCurrent }
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -16,6 +16,8 @@ import lifelines.models.instructions._
 /** GameActor stores the infos of one game (one player) */
 class GameActor(out: ActorRef, fast: Boolean) extends Actor {
   import GameActor.logger
+
+  val steps = GameActor.steps
 
   var maybeId = Option.empty[Int]
 
@@ -42,35 +44,6 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
       context become receivedStarted
       self ! Next
   }
-
-  var steps = StepsParser.parse("""
-start:
-  " Euh… bonjour, vous me recevez ?
-  (
-    jevousrecois <- Je vous reçois.
-    quiestce <- Qui est-ce ?
-  )
-quiestce:
-  " On m'appelle Coca
-  confiance = 30
-  jevousrecois ? -> suite
-  -> jevousrecois
-jevousrecois:
-  " Je viens de trouver un téléphone, mais je peux juste envoyer des messages
-  " Apparemment vous me recevez.
-  " C'est bien.
-  confiance > 20 ? -> suite
-  " Vous êtes dans un abris ?
-  (
-    suite <- Un abris ?
-    maisquietesvous <- Mais qui êtes vous ?
-  )
-maisquietesvous:
-  " Oh, désolé, j'aurais du commencer par là.
-  -> quiestce
-suite:
-  -- to continue
-""")
 
   object current {
     val ctx = scala.collection.mutable.Map.empty[String, Int]
@@ -173,5 +146,11 @@ suite:
 }
 object GameActor {
   def logger = Logger("app.actors.game")
+
+  val steps = PlayCurrent.resourceAsStream("steps") match {
+    case Some(content) => StepsParser.parse(new java.io.InputStreamReader(content))
+    case None => sys.error("Missing steps file")
+  }
+
   def props(out: ActorRef, fast: Boolean) = Props(classOf[GameActor], out, fast)
 }

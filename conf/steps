@@ -1,0 +1,26 @@
+start:
+  " Euh… bonjour, vous me recevez ?
+  (
+    jevousrecois <- Je vous reçois.
+    quiestce <- Qui est-ce ?
+  )
+quiestce:
+  " On m'appelle Coca
+  confiance = 30
+  jevousrecois ? -> suite
+  -> jevousrecois
+jevousrecois:
+  " Je viens de trouver un téléphone, mais je peux juste envoyer des messages
+  " Apparemment vous me recevez.
+  " C'est bien.
+  confiance > 20 ? -> suite
+  " Vous êtes dans un abris ?
+  (
+    suite <- Un abris ?
+    maisquietesvous <- Mais qui êtes vous ?
+  )
+maisquietesvous:
+  " Oh, désolé, j'aurais du commencer par là.
+  -> quiestce
+suite:
+  -- to continue

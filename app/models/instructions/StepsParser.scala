@@ -33,7 +33,7 @@ object StepsParser extends RegexParsers {
     def step: Parser[(String, Seq[Instruction])] = id ~ ":" ~ rep(ieol ~> instr) ^^ { case n ~ _ ~ i => n -> i }
     def steps: Parser[Steps] = opt(eol) ~> repsep(step, eol) <~ opt(eol) ^^ { _.toMap }
 
-    def parse(input: String): Steps = parseAll(steps, input) match {
+    def parse(input: java.io.InputStreamReader): Steps = parseAll(steps, input) match {
       case Success(result, _) => result
       case failure : NoSuccess => scala.sys.error(failure.msg)
     }
