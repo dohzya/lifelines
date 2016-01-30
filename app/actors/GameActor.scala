@@ -63,13 +63,11 @@ class GameActor(out: ActorRef) extends Actor {
       )
     ),
     "quiestce" -> Seq(
-      SetCtx("quiestce" -> 1),
       Talk("On m'appelle Coca"),
       IfCtxEQ("jevousrecois" -> 1, Jump("suite")),
       Jump("jevousrecois")
     ),
     "jevousrecois" -> Seq(
-      SetCtx("jevousrecois" -> 1),
       Talk("Je viens de trouver un téléphone, mais je peux juste envoyer des messages"),
       Talk("Apparemment vous me recevez."),
       Talk("C'est bien."),
@@ -105,7 +103,7 @@ class GameActor(out: ActorRef) extends Actor {
       }
 
     case models.Input(action) =>
-      logger.debug(s"Received action $action")
+      current.ctx += (action -> 1)
       self ! Jump(action)
 
     case Wait(duration, instr) =>
