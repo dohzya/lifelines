@@ -38,11 +38,12 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
 
   def receive = receivedCreated
 
-  def receivedCreated = buildReceive {
+  def receivedCreated: Receive = {
     case WorldActor.SetId(id) =>
       maybeId = Some(id)
       context become receivedStarted
       self ! Next
+    case msg => Logger.warn(s"Received unsupported message: $msg")
   }
 
   object current {
@@ -56,7 +57,7 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
     else context.system.scheduler.scheduleOnce(duration, self, message)
   }
 
-  def receivedStarted = buildReceive {
+  def receivedStarted: Receive = {
     case Next =>
       current.stack match {
         case instr +: stack =>
@@ -135,12 +136,8 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
           self ! PoisonPill
       }
       self ! Next
-  }
 
-  // helpers
-
-  private def buildReceive(pf: Receive): Receive = {
-    pf.orElse { case msg => Logger.warn(s"Received unsupported message: $msg") }
+    case msg => Logger.warn(s"Received unsupported message: $msg")
   }
 
 }
