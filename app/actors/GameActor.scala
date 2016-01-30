@@ -9,6 +9,7 @@ import play.api.Logger
 import play.api.Play.current
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.parsing.combinator.RegexParsers
 
 import lifelines.models
 
@@ -42,11 +43,12 @@ class GameActor(out: ActorRef) extends Actor {
   case class Talk(content: String) extends Instruction
   case class Info(content: String) extends Instruction
   case class Question(choices: Map[String, String]) extends Instruction
-    object Question { def apply(choices: (String, String)*): Question = Question(choices.toMap) }
-  case class SetCtx(param: (String, Int)) extends Instruction
-  case class IfCtxEQ(param: (String, Int), instr: Instruction) extends Instruction
-  case class IfCtxGT(param: (String, Int), instr: Instruction) extends Instruction
-  case class IfCtxLT(param: (String, Int), instr: Instruction) extends Instruction
+  case class SetCtx(param: String, value: Int) extends Instruction
+  case class IncrCtx(param: String, value: Int) extends Instruction
+  case class DecrCtx(param: String, value: Int) extends Instruction
+  case class IfCtxEQ(param: String, value: Int, instr: Instruction) extends Instruction
+  case class IfCtxGT(param: String, value: Int, instr: Instruction) extends Instruction
+  case class IfCtxLT(param: String, value: Int, instr: Instruction) extends Instruction
   case class Jump(step: String) extends Instruction
 
   case class SendTalk(content: String) extends Instruction
@@ -54,38 +56,70 @@ class GameActor(out: ActorRef) extends Actor {
 
   case object Next
 
-  var steps = Map[String, Seq[Instruction]](
-    "start" -> Seq(
-      Talk("Euh… bonjour, vous me recevez ?"),
-      Question(
-        "jevousrecois" -> "Je vous reçois.",
-        "quiestce" -> "Qui est-ce ?"
-      )
-    ),
-    "quiestce" -> Seq(
-      Talk("On m'appelle Coca"),
-      IfCtxEQ("jevousrecois" -> 1, Jump("suite")),
-      Jump("jevousrecois")
-    ),
-    "jevousrecois" -> Seq(
-      Talk("Je viens de trouver un téléphone, mais je peux juste envoyer des messages"),
-      Talk("Apparemment vous me recevez."),
-      Talk("C'est bien."),
-      IfCtxEQ("quiestce" -> 1, Jump("suite")),
-      Talk("Vous êtes dans un abris ?"),
-      Question(
-        "suite" -> "Un abris ?",
-        "maisquietesvous" -> "Mais qui êtes vous ?"
-      )
-    ),
-    "maisquietesvous" -> Seq(
-      Talk("Oh, désolé, j'aurais du commencer par là."),
-      Jump("quiestce")
-    ),
-    "suite" -> Seq(
-      Info("-- to continue --")
-    )
+  type Steps = Map[String, Seq[Instruction]]
+
+  object StepsParser extends RegexParsers {
+
+    override def skipWhitespace = false
+
+    def eol: Parser[Unit] = """\n""".r ^^ { _ => () }
+    def indent: Parser[Unit] = "  " ^^ { _ => () }
+    def ieol: Parser[Unit] = eol ~ indent ^^ { _ => () }
+    def value: Parser[Int] = """\d+""".r ^^ { _.toInt }
+    def id: Parser[String] = """[a-z]*""".r
+    def text: Parser[String] = ".*".r
+
+    def talk: Parser[Talk] = "\"" ~> text ^^ { Talk(_) }
+    def setCtx: Parser[SetCtx] = (id <~ " = ") ~ value ^^ { case p ~ v => SetCtx(p, v) }
+    def incrCtx: Parser[IncrCtx] = (id <~ " += ") ~ value ^^ { case p ~ v => IncrCtx(p, v) }
+    def decrCtx: Parser[DecrCtx] = (id <~ " -= ") ~ value ^^ { case p ~ v => DecrCtx(p, v) }
+    def ifCtx: Parser[IfCtxEQ] = (id <~ " ? ") ~ instr ^^ { case c ~ i => IfCtxEQ(c, 1, i) }
+    def ifCtxEQ: Parser[IfCtxEQ] = (id <~ " = ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxEQ(c, v, i) }
+    def ifCtxGT: Parser[IfCtxGT] = (id <~ " > ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxGT(c, v, i) }
+    def ifCtxLT: Parser[IfCtxLT] = (id <~ " < ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxLT(c, v, i) }
+    def jump: Parser[Jump] = "-> " ~> id ^^ { Jump(_) }
+    def info: Parser[Info] = "-- " ~> text ^^ { Info(_) }
+      def choice: Parser[(String, String)] = (id <~ " <- ") ~ text ^^ { case i ~ q => (i -> q) }
+    def question: Parser[Question] = "(" ~> rep(ieol ~> indent ~> choice) <~ ieol <~ ")" ^^ { cs => Question(cs.toMap) }
+
+    def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
+    def step: Parser[(String, Seq[Instruction])] = id ~ ":" ~ rep(ieol ~> instr) ^^ { case n ~ _ ~ i => n -> i }
+    def steps: Parser[Steps] = opt(eol) ~> repsep(step, eol) <~ opt(eol) ^^ { _.toMap }
+
+    def parse(input: String): Steps = parseAll(steps, input) match {
+      case Success(result, _) => result
+      case failure : NoSuccess => scala.sys.error(failure.msg)
+    }
+  }
+
+  var steps = StepsParser.parse("""
+start:
+  " Euh… bonjour, vous me recevez ?
+  (
+    jevousrecois <- Je vous reçois.
+    quiestce <- Qui est-ce ?
   )
+quiestce:
+  " On m'appelle Coca
+  confiance = 30
+  jevousrecois ? -> suite
+  -> jevousrecois
+jevousrecois:
+  " Je viens de trouver un téléphone, mais je peux juste envoyer des messages
+  " Apparemment vous me recevez.
+  " C'est bien.
+  confiance > 20 ? -> suite
+  " Vous êtes dans un abris ?
+  (
+    suite <- Un abris ?
+    maisquietesvous <- Mais qui êtes vous ?
+  )
+maisquietesvous:
+  " Oh, désolé, j'aurais du commencer par là.
+  -> quiestce
+suite:
+  -- to continue
+""")
 
   object current {
     val ctx = scala.collection.mutable.Map.empty[String, Int]
@@ -128,23 +162,33 @@ class GameActor(out: ActorRef) extends Actor {
       out ! models.Choices(choices.toMap)
       self ! Next
 
-    case SetCtx((param, value)) =>
+    case SetCtx(param, value) =>
       current.ctx += (param -> value)
       self ! Next
 
-    case IfCtxEQ((param, value), instr) =>
+    case IncrCtx(param, value) =>
+      val newValue = current.ctx.getOrElse(param, 0) + value
+      current.ctx += (param -> newValue)
+      self ! Next
+
+    case DecrCtx(param, value) =>
+      val newValue = current.ctx.getOrElse(param, 0) - value
+      current.ctx += (param -> newValue)
+      self ! Next
+
+    case IfCtxEQ(param, value, instr) =>
       if (current.ctx.get(param).map(_ == value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxGT((param, value), instr) =>
+    case IfCtxGT(param, value, instr) =>
       if (current.ctx.get(param).map(_ > value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxLT((param, value), instr) =>
+    case IfCtxLT(param, value, instr) =>
       if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
         self ! instr
       }
