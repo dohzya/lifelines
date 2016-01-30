@@ -115,7 +115,7 @@ class GameActor(out: ActorRef) extends Actor {
 
     case SendTalk(content) =>
       out ! models.Talk(content)
-      self ! Next
+      context.system.scheduler.scheduleOnce(200.milliseconds, self, Next)
 
     case Info(content) =>
       out ! models.Info(content)
