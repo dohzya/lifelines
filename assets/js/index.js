@@ -8,21 +8,26 @@ function doSend(message) {
   websocket.send(message);
 }
 
+function findParentChoice(el) {
+  if (el.classList.contains("choice")) return el;
+  return findParentChoice(el.parentNode);
+}
 function currentChoice(el) {
   el.classList.add("current-choice");
   el.onclick = function (e) {
     el.classList.remove("current-choice");
     el.onclick = undefined;
-    e.target.classList.add("selected-choice");
-    send(e.target.dataset.name);
+    var choice = findParentChoice(e.target);
+    choice.classList.add("selected-choice");
+    send(choice.dataset.name);
   };
 }
 
 function talking() {
   if (!elTalking) {
-    elTalking = document.createElement("p");
+    elTalking = document.createElement("div");
     elTalking.className = `message talking`;
-    elTalking.innerHTML = "...";
+    elTalking.innerHTML = "<p>…</p>";
     output.appendChild(elTalking);
   }
 }
@@ -35,7 +40,7 @@ function stopTalking() {
 
 function showMessage(content, kind) {
   stopTalking();
-  var elMsg = document.createElement("p");
+  var elMsg = document.createElement("div");
   elMsg.className = `message ${kind}`;
   elMsg.innerHTML = content;
   output.appendChild(elMsg);
@@ -65,10 +70,10 @@ function start(opts) {
   websocket = new WebSocket(opts.wsUri + location.search);
   output = opts.output;
   websocket.onopen = (evt) => {
-    showMessage("-- connecté -- ", "info");
+    showMessage("<p>-- connecté -- </p>", "info");
   };
   websocket.onclose = (evt) => {
-    showMessage("-- déconnecté -- ", "info");
+    showMessage("<p>-- déconnecté -- </p>", "info");
   };
   websocket.onmessage = (evt) => {
     var data = JSON.parse(evt.data);
@@ -77,7 +82,7 @@ function start(opts) {
     else showMessage(data.message, data.kind);
   };
   websocket.onerror = (evt) => {
-    showMessage(evt.data, "error");
+    showMessage(evt.data, "<p>error</p>");
   };
 }
 

@@ -57,6 +57,20 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
     else context.system.scheduler.scheduleOnce(duration, self, message)
   }
 
+  val parser = {
+    import org.pegdown.{ Extensions => ext }
+    val opts = Seq(
+      ext.QUOTES, // Pretty single and double quotes.
+      ext.SMARTS, // Pretty ellipses, dashes and apostrophes.
+      ext.SMARTYPANTS, // All of the smartypants prettyfications.
+      ext.SUPPRESS_ALL_HTML // new org.pegdown.PegDownProcessor()
+    ).reduce(_ | _)
+    new org.pegdown.PegDownProcessor(opts)
+  }
+  def parseText(text: String): String = {
+    parser.markdownToHtml(text)
+  }
+
   def receivedStarted: Receive = {
     case Next =>
       current.stack match {
@@ -81,18 +95,20 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
       schedule(200.milliseconds, DoWait(1000.milliseconds, SendTalk(content)))
 
     case SendTalk(content) =>
-      out ! models.Talk(content)
+      out ! models.Talk(parseText(content))
       schedule(200.milliseconds, Next)
 
     case Info(content) =>
-      out ! models.Info(content)
+      out ! models.Info(parseText(content))
       self ! Next
 
     case Question(choices) =>
       schedule(500.milliseconds, SendQuestion(choices))
 
     case SendQuestion(choices) =>
-      out ! models.Choices(choices.toMap)
+      out ! models.Choices(choices.map {
+        case (c, t) => c -> parseText(t)
+      }.toMap)
       self ! Next
 
     case SetCtx(param, value) =>
@@ -132,7 +148,7 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
         case Some(instructions) =>
           current.stack = instructions
         case None =>
-          out ! models.Error("Action inconnue")
+          out ! models.Error("<p>Action inconnue</p>")
           self ! PoisonPill
       }
       self ! Next
