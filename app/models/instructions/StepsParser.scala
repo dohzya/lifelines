@@ -15,10 +15,10 @@ object StepsParser extends RegexParsers {
     def id: Parser[String] = """[a-z]*""".r
     def text: Parser[String] = ".*".r
 
-    def comment: Parser[Unit] = " *#.*".r <~ eol ^^ { _ => () }
+    def comment: Parser[String] = "# *" ~> ".*".r <~ eol
 
         def talkSingle: Parser[String] = "\" " ~> text <~ eol
-        def talkMulti: Parser[String] = "\"" ~> eol ~> rep(indent ~> indent ~> text <~ eol | eol) ^^ { _.mkString("\n") }
+        def talkMulti: Parser[String] = "\"" ~> eol ~> rep1(indent ~> indent ~> text <~ eol | eol) ^^ { _.mkString("\n") }
     def talk: Parser[Talk] = (talkSingle | talkMulti) ^^ { Talk(_) }
     def setCtx: Parser[SetCtx] = (id <~ " = ") ~ value <~ eol ^^ { case p ~ v => SetCtx(p, v) }
     def incrCtx: Parser[IncrCtx] = (id <~ " += ") ~ value <~ eol ^^ { case p ~ v => IncrCtx(p, v) }
@@ -30,13 +30,17 @@ object StepsParser extends RegexParsers {
     def jump: Parser[Jump] = "-> " ~> id <~ eol ^^ { Jump(_) }
     def info: Parser[Info] = "-- " ~> text <~ eol ^^ { Info(_) }
       def choice: Parser[(String, String)] = (id <~ " <- ") ~ text <~ eol ^^ { case i ~ q => (i -> q) }
-    def question: Parser[Question] = "(" ~> eol ~> rep(indent ~> indent ~> choice) <~ indent <~ ")" <~ eol ^^ { cs => Question(cs.toMap) }
+    def question: Parser[Question] = "(" ~> eol ~> rep1(indent ~> indent ~> (choice | comment)) <~ indent <~ ")" <~ eol ^^ {
+        cs => Question(cs.collect { case c: (String, String) => c }.toMap)
+    }
 
     def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
     def step: Parser[(String, Seq[Instruction])] = (id <~ ":" <~ eol) ~ rep(indent ~> (instr | comment)) ^^ {
       case n ~ i => n -> i.collect { case i: Instruction => i }
     }
-    def steps: Parser[Steps] = opt(eol) ~> rep(step) <~ opt(eol) ^^ { _.toMap }
+    def steps: Parser[Steps] = opt(eol) ~> rep(step | comment) <~ opt(eol) ^^ {
+        _.collect { case s: (String, Seq[Instruction]) => s }.toMap
+    }
 
     def parse(input: java.io.InputStreamReader): Steps = parseAll(steps, input) match {
       case Success(result, _) => result
