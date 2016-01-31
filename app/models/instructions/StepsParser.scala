@@ -35,6 +35,6 @@ object StepsParser extends RegexParsers {
 
     def parse(input: java.io.InputStreamReader): Steps = parseAll(steps, input) match {
       case Success(result, _) => result
-      case failure : NoSuccess => scala.sys.error(failure.msg)
+      case failure : NoSuccess => scala.sys.error(failure.toString)
     }
   }
