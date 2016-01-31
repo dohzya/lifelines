@@ -17,6 +17,8 @@ object StepsParser extends RegexParsers {
     def id: Parser[String] = """[a-z]*""".r
     def text: Parser[String] = ".*".r
 
+    def comment: Parser[Unit] = " *#.*".r ^^ { _ => () }
+
     def talk: Parser[Talk] = ("\" " ~> text | "\"" ~> rep(eolii ~> text) ^^ { _.mkString("\n") } ) ^^ { Talk(_) }
     def setCtx: Parser[SetCtx] = (id <~ " = ") ~ value ^^ { case p ~ v => SetCtx(p, v) }
     def incrCtx: Parser[IncrCtx] = (id <~ " += ") ~ value ^^ { case p ~ v => IncrCtx(p, v) }
@@ -31,7 +33,9 @@ object StepsParser extends RegexParsers {
     def question: Parser[Question] = "(" ~> rep(eolii ~> choice) <~ eoli <~ ")" ^^ { cs => Question(cs.toMap) }
 
     def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
-    def step: Parser[(String, Seq[Instruction])] = id ~ ":" ~ rep(ieol ~> instr) ^^ { case n ~ _ ~ i => n -> i }
+    def step: Parser[(String, Seq[Instruction])] = id ~ ":" ~ rep(eoli ~> (instr | comment)) ^^ {
+      case n ~ _ ~ i => n -> i.collect { case i: Instruction => i }
+    }
     def steps: Parser[Steps] = opt(eol) ~> repsep(step, eol) <~ opt(eol) ^^ { _.toMap }
 
     def parse(input: java.io.InputStreamReader): Steps = parseAll(steps, input) match {
