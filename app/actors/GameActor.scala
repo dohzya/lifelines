@@ -92,7 +92,8 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
 
     case Talk(content) =>
       out ! models.Talking
-      schedule(200.milliseconds, DoWait(1000.milliseconds, SendTalk(content)))
+      val waitTime = (content.size * 50).milliseconds
+      schedule(200.milliseconds, DoWait(waitTime, SendTalk(content)))
 
     case SendTalk(content) =>
       out ! models.Talk(parseText(content))
