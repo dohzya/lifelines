@@ -16,7 +16,7 @@ object StepsParser extends RegexParsers {
     def id: Parser[String] = """[a-z]*""".r
     def text: Parser[String] = ".*".r
 
-    def talk: Parser[Talk] = "\"" ~> text ^^ { Talk(_) }
+    def talk: Parser[Talk] = "\" " ~> text ^^ { Talk(_) }
     def setCtx: Parser[SetCtx] = (id <~ " = ") ~ value ^^ { case p ~ v => SetCtx(p, v) }
     def incrCtx: Parser[IncrCtx] = (id <~ " += ") ~ value ^^ { case p ~ v => IncrCtx(p, v) }
     def decrCtx: Parser[DecrCtx] = (id <~ " -= ") ~ value ^^ { case p ~ v => DecrCtx(p, v) }
