@@ -35,7 +35,7 @@ object StepsParser extends RegexParsers {
     }
 
     def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
-    def step: Parser[(String, Seq[Instruction])] = (id <~ ":" <~ eol) ~ rep(indent ~> (instr | comment | eol)) ^^ {
+    def step: Parser[(String, Seq[Instruction])] = (id <~ ":" <~ opt(" #.*".r) <~ eol) ~ rep(indent ~> (instr | comment | eol)) ^^ {
       case n ~ i => n -> i.collect { case i: Instruction => i }
     }
     def steps: Parser[Steps] = opt(eol) ~> rep(step | comment | eol) <~ opt(eol) ^^ {
