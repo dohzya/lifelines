@@ -11,12 +11,13 @@ object StepsParser extends RegexParsers {
 
     def eol: Parser[Unit] = """\n""".r ^^ { _ => () }
     def indent: Parser[Unit] = "  " ^^ { _ => () }
-    def ieol: Parser[Unit] = eol ~ indent ^^ { _ => () }
+    def eoli: Parser[Unit] = eol ~ indent ^^ { _ => () }
+    def eolii: Parser[Unit] = eoli ~ indent ^^ { _ => () }
     def value: Parser[Int] = """\d+""".r ^^ { _.toInt }
     def id: Parser[String] = """[a-z]*""".r
     def text: Parser[String] = ".*".r
 
-    def talk: Parser[Talk] = "\" " ~> text ^^ { Talk(_) }
+    def talk: Parser[Talk] = ("\" " ~> text | "\"" ~> rep(eolii ~> text) ^^ { _.mkString("\n") } ) ^^ { Talk(_) }
     def setCtx: Parser[SetCtx] = (id <~ " = ") ~ value ^^ { case p ~ v => SetCtx(p, v) }
     def incrCtx: Parser[IncrCtx] = (id <~ " += ") ~ value ^^ { case p ~ v => IncrCtx(p, v) }
     def decrCtx: Parser[DecrCtx] = (id <~ " -= ") ~ value ^^ { case p ~ v => DecrCtx(p, v) }
@@ -27,7 +28,7 @@ object StepsParser extends RegexParsers {
     def jump: Parser[Jump] = "-> " ~> id ^^ { Jump(_) }
     def info: Parser[Info] = "-- " ~> text ^^ { Info(_) }
       def choice: Parser[(String, String)] = (id <~ " <- ") ~ text ^^ { case i ~ q => (i -> q) }
-    def question: Parser[Question] = "(" ~> rep(ieol ~> indent ~> choice) <~ ieol <~ ")" ^^ { cs => Question(cs.toMap) }
+    def question: Parser[Question] = "(" ~> rep(eolii ~> choice) <~ eoli <~ ")" ^^ { cs => Question(cs.toMap) }
 
     def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
     def step: Parser[(String, Seq[Instruction])] = id ~ ":" ~ rep(ieol ~> instr) ^^ { case n ~ _ ~ i => n -> i }
