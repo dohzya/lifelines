@@ -12,7 +12,7 @@ object StepsParser extends RegexParsers {
     def eol: Parser[String] = """\n""".r ^^ { _ => "\n" }
     def indent: Parser[String] = "  "
     def value: Parser[Int] = """\d+""".r ^^ { _.toInt }
-    def id: Parser[String] = """[a-z]*""".r
+    def id: Parser[String] = """[a-z][a-z_0-9]*""".r
     def text: Parser[String] = ".*".r
 
     def comment: Parser[String] = "# *" ~> ".*".r <~ eol
