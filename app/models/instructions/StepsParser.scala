@@ -29,7 +29,7 @@ object StepsParser extends RegexParsers {
     def ifCtxGTE: Parser[IfCtxGTE] = (id <~ " >= ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxGTE(c, v, i) }
     def ifCtxLT: Parser[IfCtxLT] = (id <~ " < ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxLT(c, v, i) }
     def ifCtxLTE: Parser[IfCtxLTE] = (id <~ " <= ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxLTE(c, v, i) }
-    def jump: Parser[Jump] = "-> " ~> id <~ eol ^^ { Jump(_) }
+    def jump: Parser[Jump] = "-> " ~> id <~ opt(" " ~> comment) <~ eol ^^ { Jump(_) }
     def info: Parser[Info] = "-- " ~> text <~ eol ^^ { Info(_) }
       def choice: Parser[(String, String)] = (id <~ " <- ") ~ text <~ eol ^^ { case i ~ q => (i -> q) }
     def question: Parser[Question] = "(" ~> eol ~> rep1(indent ~> indent ~> (choice | comment)) <~ indent <~ ")" <~ eol ^^ {
