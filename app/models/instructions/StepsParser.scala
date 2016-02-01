@@ -26,7 +26,9 @@ object StepsParser extends RegexParsers {
     def ifCtx: Parser[IfCtxEQ] = (id <~ " ? ") ~ instr ^^ { case c ~ i => IfCtxEQ(c, 1, i) }
     def ifCtxEQ: Parser[IfCtxEQ] = (id <~ " = ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxEQ(c, v, i) }
     def ifCtxGT: Parser[IfCtxGT] = (id <~ " > ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxGT(c, v, i) }
+    def ifCtxGTE: Parser[IfCtxGTE] = (id <~ " >= ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxGTE(c, v, i) }
     def ifCtxLT: Parser[IfCtxLT] = (id <~ " < ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxLT(c, v, i) }
+    def ifCtxLTE: Parser[IfCtxLTE] = (id <~ " <= ") ~ (value <~ " ? ") ~ instr ^^ { case c ~ v ~ i => IfCtxLTE(c, v, i) }
     def jump: Parser[Jump] = "-> " ~> id <~ eol ^^ { Jump(_) }
     def info: Parser[Info] = "-- " ~> text <~ eol ^^ { Info(_) }
       def choice: Parser[(String, String)] = (id <~ " <- ") ~ text <~ eol ^^ { case i ~ q => (i -> q) }
@@ -34,7 +36,7 @@ object StepsParser extends RegexParsers {
         cs => Question(cs.collect { case c: (String, String) @unchecked => c }.toMap)
     }
 
-    def instr: Parser[Instruction] = talk|setCtx|incrCtx|decrCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
+    def instr: Parser[Instruction] = talk|setCtx|incrCtx|decrCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxGTE|ifCtxLT|ifCtxLTE|jump|info|question
     def step: Parser[(String, Seq[Instruction])] = (id <~ ":" <~ opt(" #.*".r) <~ eol) ~ rep(indent ~> (instr | comment | eol)) ^^ {
       case n ~ i => n -> i.collect { case i: Instruction => i }
     }

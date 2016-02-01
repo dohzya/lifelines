@@ -14,5 +14,7 @@ case class IncrCtx(param: String, value: Int) extends Instruction
 case class DecrCtx(param: String, value: Int) extends Instruction
 case class IfCtxEQ(param:  String, value: Int, instr: Instruction) extends Instruction
 case class IfCtxGT(param: String, value: Int, instr: Instruction) extends Instruction
+case class IfCtxGTE(param: String, value: Int, instr: Instruction) extends Instruction
 case class IfCtxLT(param: String, value: Int, instr: Instruction) extends Instruction
+case class IfCtxLTE(param: String, value: Int, instr: Instruction) extends Instruction
 case class Jump(step: String) extends Instruction

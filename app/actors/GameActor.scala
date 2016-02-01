@@ -138,8 +138,20 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
       }
       else self ! Next
 
+    case IfCtxGTE(param, value, instr) =>
+      if (current.ctx.get(param).map(_ >= value).getOrElse(false)) {
+        self ! instr
+      }
+      else self ! Next
+
     case IfCtxLT(param, value, instr) =>
       if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
+        self ! instr
+      }
+      else self ! Next
+
+    case IfCtxLTE(param, value, instr) =>
+      if (current.ctx.get(param).map(_ <= value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
