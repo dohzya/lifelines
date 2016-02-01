@@ -34,7 +34,7 @@ object StepsParser extends RegexParsers {
         cs => Question(cs.collect { case c: (String, String) @unchecked => c }.toMap)
     }
 
-    def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
+    def instr: Parser[Instruction] = talk|setCtx|incrCtx|decrCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
     def step: Parser[(String, Seq[Instruction])] = (id <~ ":" <~ opt(" #.*".r) <~ eol) ~ rep(indent ~> (instr | comment | eol)) ^^ {
       case n ~ i => n -> i.collect { case i: Instruction => i }
     }
