@@ -15,7 +15,7 @@ object StepsParser extends RegexParsers {
     def id: Parser[String] = """[a-z][a-z_0-9]*""".r
     def text: Parser[String] = ".*".r
 
-    def comment: Parser[String] = "# *" ~> ".*".r <~ eol
+    def comment: Parser[String] = "# *".r ~> ".*".r <~ eol
 
         def talkSingle: Parser[String] = "\" " ~> text <~ eol
         def talkMulti: Parser[String] = "\"" ~> eol ~> rep1(indent ~> indent ~> text <~ eol | eol) ^^ { _.mkString("\n") }
