@@ -31,7 +31,7 @@ object StepsParser extends RegexParsers {
     def info: Parser[Info] = "-- " ~> text <~ eol ^^ { Info(_) }
       def choice: Parser[(String, String)] = (id <~ " <- ") ~ text <~ eol ^^ { case i ~ q => (i -> q) }
     def question: Parser[Question] = "(" ~> eol ~> rep1(indent ~> indent ~> (choice | comment)) <~ indent <~ ")" <~ eol ^^ {
-        cs => Question(cs.collect { case c: (String, String) => c }.toMap)
+        cs => Question(cs.collect { case c: (String, String) @unchecked => c }.toMap)
     }
 
     def instr: Parser[Instruction] = talk|setCtx|ifCtx|ifCtxEQ|ifCtxGT|ifCtxLT|jump|info|question
@@ -39,7 +39,7 @@ object StepsParser extends RegexParsers {
       case n ~ i => n -> i.collect { case i: Instruction => i }
     }
     def steps: Parser[Steps] = opt(eol) ~> rep(step | comment | eol) <~ opt(eol) ^^ {
-        _.collect { case s: (String, Seq[Instruction]) => s }.toMap
+        _.collect { case s: (String, Seq[Instruction]) @unchecked => s }.toMap
     }
 
     def parse(input: java.io.InputStreamReader): Steps = parseAll(steps, input) match {
