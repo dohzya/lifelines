@@ -1,5 +1,6 @@
 package lifelines
 package models
+package messages
 
 import play.api.libs.json.{ Format, Json, JsError, JsResult, JsSuccess }
 import play.api.libs.json.{ JsValue, JsObject, JsString }

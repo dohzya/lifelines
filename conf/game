@@ -1,0 +1,75 @@
+--- metadata
+name: Julius
+world: wh40k-abc
+typingspeed: slow
+start: step0
+--- ctx
+like = 30
+--- css
+--- steps
+step0:
+  " Quelqu'un me reçoit ?
+  (
+    step1 <- Je vous reçois.
+    step2 <- Qui est-ce ?
+  )
+
+step1: # Je vous reçois.
+  " Oh, parfait.
+  " Cette liaison est-elle sécurisée ?
+  (
+    step3 <- Désolé, je n'en sais rien.
+    step1_2 <- Dites-moi d'abord qui vous êtes.
+  )
+
+step2: # Qui est-ce ?
+  " Je suis l'adepte Julius Mordat, du Collegia Tetanica.
+  presentation = 1
+  " Cette liaison est-elle sécurisée ?
+  (
+    step3 <- Désolé, je n'en sais rien.
+    step2_1 <- « Collegia Tetanica » ?
+  )
+
+step3: # Liaison sécurisée ? - Désolé, je n'en sais rien.
+  " D'accord, vous n'êtes donc pas du Mechanicum.
+  notmechanicum = 1
+  " Pouvez-vous me mettre en contact avec un membre du Machanicus ?
+  (
+    step3_1 <- Qu'est-ce que le « Mechanicum » ?
+    step3_2 <- Il n'y a que moi ici, alors dites ce que vous avez à dire.
+  )
+
+step1_2: # Dites-moi d'abord qui vous êtes.
+  " Oh, désolé, j'aurais dû commencer par là.
+  " Je suis l'adepte Julius Mordat, du Collegia Tetanica.
+  -> step2 # Cette liaison est-elle sécurisée ?
+
+step2_1: # Collegia Tetanica ?
+  # TODO
+
+step3_1: # Mechanicum ?
+  " Vous ne connaissez pas le Mechanicum ?
+  " Mais nous sommes les garants de la technologie humaine !
+  " Sans nous, vous auriez oublié toutes les inventions de nos ancêtres
+  " Enfin bon, ça ne m'étonne même pas…
+  "
+    Vu le signal, je pensais que vous étiez sur Terre, mais ça m'étonne qu'un
+    terrien ne nous connaisse pas, donc j'ai des doutes.
+  " D'autant plus que vous ne me semblez pas partager leur arrogance.
+  " Dans quelle planête êtes-vous ?
+  (
+    step3_1_1 <- De la Terre.
+    step3_1_2 <- Il y a des humains sur d'autres planêtes que la Terre ?
+  )
+
+step3_2: # dites ce que vous avez à dire.
+  like -= 1
+
+step3_1_1: # De la Terre.
+
+step3_1_2: # _que_ la terre
+  " Autant pour moi pour l'arrogance.
+  " Bien sûr qu'il y a des humains ailleurs !
+  " Nous gourvernons sur la galaxie !
+  " Et ce grâce au support du Mechanicum.

@@ -11,13 +11,17 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import lifelines.models
-import lifelines.models.instructions._
+import lifelines.models.GameFile
+import lifelines.models.GameFileParser
+import lifelines.models.instructions
+import lifelines.models.instructions.Instruction
+import lifelines.models.messages
 
 /** GameActor stores the infos of one game (one player) */
 class GameActor(out: ActorRef, fast: Boolean) extends Actor {
   import GameActor.logger
 
-  val steps = GameActor.steps
+  val game = GameActor.gameFile
 
   var maybeId = Option.empty[Int]
 
@@ -42,14 +46,14 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
     case WorldActor.SetId(id) =>
       maybeId = Some(id)
       context become receivedStarted
-      self ! Next
+      self ! instructions.Jump(game.metadata.start)
     case msg => Logger.warn(s"Received unsupported message: $msg")
   }
 
   object current {
-    val ctx = scala.collection.mutable.Map.empty[String, Int]
-    var stack = steps("start")
-    var name = "Crogon"
+    val ctx = scala.collection.mutable.Map[String, Int](game.ctx.data.toSeq: _*)
+    var stack = Seq.empty[Instruction]
+    var name = game.metadata.name
   }
 
   def schedule(duration: FiniteDuration, message: Any) = {
@@ -80,88 +84,91 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
         case Seq() => // nothing to do
       }
 
-    case models.Input(action) =>
+    case messages.Input(action) =>
+      // TODO check that this action is allowed (store it when sending a choice)
+      // send "choice1" and "choice2" to the user, and use-it to retrieve the step
       current.ctx += (action -> 1)
-      self ! Jump(action)
+      self ! instructions.Jump(action)
 
-    case Wait(duration, instr) =>
+    case instructions.Wait(duration, instr) =>
       self ! DoWait(duration, instr)
 
     case DoWait(duration, instr) =>
       schedule(duration, instr)
 
-    case Talk(content) =>
-      out ! models.Talking
+    case instructions.Talk(content) =>
+      out ! messages.Talking
       val waitTime = (content.size * 50).milliseconds
       schedule(200.milliseconds, DoWait(waitTime, SendTalk(content)))
 
     case SendTalk(content) =>
-      out ! models.Talk(parseText(content))
+      out ! messages.Talk(parseText(content))
       schedule(200.milliseconds, Next)
 
-    case Info(content) =>
-      out ! models.Info(parseText(content))
+    case instructions.Info(content) =>
+      out ! messages.Info(parseText(content))
       self ! Next
 
-    case Question(choices) =>
+    case instructions.Question(choices) =>
       schedule(500.milliseconds, SendQuestion(choices))
 
     case SendQuestion(choices) =>
-      out ! models.Choices(choices.map {
+      out ! messages.Choices(choices.map {
         case (c, t) => c -> parseText(t)
       }.toMap)
       self ! Next
 
-    case SetCtx(param, value) =>
+    case instructions.SetCtx(param, value) =>
       current.ctx += (param -> value)
       self ! Next
 
-    case IncrCtx(param, value) =>
+    case instructions.IncrCtx(param, value) =>
       val newValue = current.ctx.getOrElse(param, 0) + value
       current.ctx += (param -> newValue)
       self ! Next
 
-    case DecrCtx(param, value) =>
+    case instructions.DecrCtx(param, value) =>
       val newValue = current.ctx.getOrElse(param, 0) - value
       current.ctx += (param -> newValue)
       self ! Next
 
-    case IfCtxEQ(param, value, instr) =>
+    case instructions.IfCtxEQ(param, value, instr) =>
       if (current.ctx.get(param).map(_ == value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxGT(param, value, instr) =>
+    case instructions.IfCtxGT(param, value, instr) =>
       if (current.ctx.get(param).map(_ > value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxGTE(param, value, instr) =>
+    case instructions.IfCtxGTE(param, value, instr) =>
       if (current.ctx.get(param).map(_ >= value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxLT(param, value, instr) =>
+    case instructions.IfCtxLT(param, value, instr) =>
       if (current.ctx.get(param).map(_ < value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case IfCtxLTE(param, value, instr) =>
+    case instructions.IfCtxLTE(param, value, instr) =>
       if (current.ctx.get(param).map(_ <= value).getOrElse(false)) {
         self ! instr
       }
       else self ! Next
 
-    case Jump(step) =>
-      steps.get(step) match {
-        case Some(instructions) =>
-          current.stack = instructions
+    case instructions.Jump(step) =>
+      game.steps.get(step) match {
+        case Some(instrs) =>
+          current.stack = instrs
         case None =>
-          out ! models.Error("<p>Action inconnue</p>")
+          Logger.debug(s"Unknown step '$step'")
+          out ! messages.Error("<p>Action inconnue</p>")
           self ! PoisonPill
       }
       self ! Next
@@ -173,9 +180,9 @@ class GameActor(out: ActorRef, fast: Boolean) extends Actor {
 object GameActor {
   def logger = Logger("app.actors.game")
 
-  val steps = PlayCurrent.resourceAsStream("steps") match {
-    case Some(content) => StepsParser.parse(new java.io.InputStreamReader(content))
-    case None => sys.error("Missing steps file")
+  val gameFile = PlayCurrent.resourceAsStream("game") match {
+    case Some(content) => GameFileParser.parse(new java.io.InputStreamReader(content))
+    case None => sys.error("Missing 'game' file")
   }
 
   def props(out: ActorRef, fast: Boolean) = Props(classOf[GameActor], out, fast)

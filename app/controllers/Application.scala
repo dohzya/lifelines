@@ -7,7 +7,7 @@ import play.api.mvc.WebSocket.FrameFormatter
 import play.api.mvc.{ Action, Controller, WebSocket }
 import play.api.Play.current
 
-import lifelines.models.{ Input, Output }
+import lifelines.models.messages.{ Input, Output }
 
 class Application extends Controller {
 
