@@ -16,12 +16,25 @@ $cyan: #2aa198;
 $green: #859900;
 
 html {
-  font-size: 3vmin;
-
   color: $base00;
   background: $base3;
 
   -webkit-font-smoothing: subpixel-antialiased;
+}
+
+h1 {
+  font-size: 2em;
+  font-weight: bold;
+
+  display: block;
+
+  margin: 1em;
+
+  text-align: center;
+}
+
+p {
+  margin: 1em 0;
 }
 
 #chat {
@@ -31,7 +44,7 @@ html {
     padding: 0 1em;
 
     border: 1px solid $base03;
-    border-radius: 3px;
+    border-radius: .3em;
   }
   .message.talk {
     //background: $base2;
@@ -42,26 +55,37 @@ html {
   .message.error {
     background: $red;
   }
-  .choices .choice {
-    margin: 1em;
-    padding: 0 1em;
+  .choices {
+    display: flex;
 
-    list-style: none;
+    margin: 0;
+    padding: 0;
+    .choice {
+      margin: 0 1em 0 0;
+      padding: 0 1em;
 
-    border: 1px solid;
-    border-radius: 3px;
-  }
-  .choices.current-choice .choice {
-    border-color: $blue;
-  }
-  .choices.current-choice .choice:hover {
-    color: white;
-    border-color: $magenta;
-    background: $magenta;
-  }
-  .choices .choice.selected-choice {
-    color: white;
-    border-color: $magenta;
-    background: $magenta;
+      list-style: none;
+
+      border: 1px solid;
+      border-radius: .3em;
+
+      flex: 1;
+    }
+    .choice:first-child {
+      margin-left: 1em;
+    }
+    &.current-choice .choice {
+      border-color: $blue;
+    }
+    &.current-choice .choice:hover {
+      color: white;
+      border-color: $magenta;
+      background: $magenta;
+    }
+    .choice.selected-choice {
+      color: white;
+      border-color: $magenta;
+      background: $magenta;
+    }
   }
 }
