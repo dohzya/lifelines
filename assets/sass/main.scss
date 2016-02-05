@@ -14,10 +14,42 @@ $violet: #6c71c4;
 $blue: #268bd2;
 $cyan: #2aa198;
 $green: #859900;
+$txt: $base00;
+$bg: $base3;
+$title-txt: $base00;
+$title-border: $base3;
+$title-bg: $base3;
+$msg-txt: $base03;
+$msg-border: $base03;
+$msg-bg: $base3;
+$msg-talk-txt: $base03;
+$msg-talk-border: $base03;
+$msg-talk-bg: $base3;
+$msg-info-txt: $green;
+$msg-info-border: $base03;
+$msg-info-bg: $base3;
+$msg-error-txt: $base03;
+$msg-error-border: $base03;
+$msg-error-bg: $red;
+$choices-txt: $base03;
+$choices-border: $base03;
+$choices-bg: $base3;
+$choices-choice-txt: $base03;
+$choices-choice-border: $base03;
+$choices-choice-bg: $base3;
+$choices-choice-current-txt: $base03;
+$choices-choice-current-border: $blue;
+$choices-choice-current-bg: $base3;
+$choices-choice-hover-txt: white;
+$choices-choice-hover-border: $magenta;
+$choices-choice-hover-bg: $magenta;
+$choices-choice-selected-txt: white;
+$choices-choice-selected-border: $magenta;
+$choices-choice-selected-bg: $magenta;
 
 html {
-  color: $base00;
-  background: $base3;
+  color: $txt;
+  background: $bg;
 
   -webkit-font-smoothing: subpixel-antialiased;
 }
@@ -29,8 +61,14 @@ h1 {
   display: block;
 
   margin: 1em;
+  padding: 1em;
 
   text-align: center;
+
+  color: $title-txt;
+  border: 1px solid $title-border;
+  border-radius: 3px;
+  background: $title-bg;
 }
 
 p {
@@ -43,31 +81,46 @@ p {
     margin: 1em;
     padding: 0 1em;
 
-    border: 1px solid $base03;
-    border-radius: .3em;
+    color: $msg-txt;
+    border: 1px solid $msg-border;
+    border-radius: 3px;
+    background: $msg-bg;
   }
   .message.talk {
-    //background: $base2;
+    color: $msg-talk-txt;
+    border-color: $msg-talk-border;
+    background: $msg-talk-bg;
   }
   .message.info {
-    color: $green;
+    color: $msg-info-txt;
+    border-color: $msg-info-border;
+    background: $msg-info-bg;
   }
   .message.error {
-    background: $red;
+    color: $msg-info-txt;
+    border-color: $msg-info-border;
+    background: $msg-info-bg;
   }
   .choices {
     display: flex;
 
     margin: 0;
     padding: 0;
+
+    color: $choices-txt;
+    border-color: $choices-border;
+    background: $choices-bg;
     .choice {
       margin: 0 1em 0 0;
       padding: 0 1em;
 
       list-style: none;
 
+      color: $choices-choice-txt;
       border: 1px solid;
-      border-radius: .3em;
+      border-color: $choices-choice-border;
+      border-radius: 3px;
+      background: $choices-choice-bg;
 
       flex: 1;
     }
@@ -75,17 +128,19 @@ p {
       margin-left: 1em;
     }
     &.current-choice .choice {
-      border-color: $blue;
+      color: $choices-choice-current-txt;
+      border-color: $choices-choice-current-border;
+      background: $choices-choice-current-bg;
     }
     &.current-choice .choice:hover {
-      color: white;
-      border-color: $magenta;
-      background: $magenta;
+      color: $choices-choice-hover-txt;
+      border-color: $choices-choice-hover-border;
+      background: $choices-choice-hover-bg;
     }
     .choice.selected-choice {
-      color: white;
-      border-color: $magenta;
-      background: $magenta;
+      color: $choices-choice-selected-txt;
+      border-color: $choices-choice-selected-border;
+      background: $choices-choice-selected-bg;
     }
   }
 }
