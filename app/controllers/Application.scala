@@ -13,7 +13,8 @@ class Application extends Controller {
 
   def index = Action { req =>
     // val wsUri = routes.Application.create.webSocketURL(req)
-    val wsUri = s"ws://${req.host}/create"
+    val protocol = if (req.secure) "wss" else "ws"
+    val wsUri = s"""${protocol}://${req.host}/create"""
     Ok(views.html.index(wsUri))
   }
 
