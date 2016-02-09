@@ -8,6 +8,12 @@ function doSend(message) {
   websocket.send(message);
 }
 
+function addElement(el) {
+  var scrolled = (window.innerHeight + window.scrollY) < document.body.offsetHeight;
+  output.appendChild(el);
+  if (!scrolled) el.scrollIntoView();
+}
+
 function findParentChoice(el) {
   if (el.classList.contains("choice")) return el;
   return findParentChoice(el.parentNode);
@@ -28,7 +34,7 @@ function talking() {
     elTalking = document.createElement("div");
     elTalking.className = `message talking`;
     elTalking.innerHTML = "<p>…</p>";
-    output.appendChild(elTalking);
+    addElement(elTalking);
   }
 }
 function stopTalking() {
@@ -43,7 +49,7 @@ function showMessage(content, kind) {
   var elMsg = document.createElement("div");
   elMsg.className = `message ${kind}`;
   elMsg.innerHTML = content;
-  output.appendChild(elMsg);
+  addElement(elMsg);
 }
 
 function showChoices(choices) {
@@ -57,7 +63,7 @@ function showChoices(choices) {
     elChoice.innerHTML = choices[name];
     elChoices.appendChild(elChoice);
   }
-  output.appendChild(elChoices);
+  addElement(elChoices);
   currentChoice(elChoices);
 }
 
